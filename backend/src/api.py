@@ -22,7 +22,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -34,6 +34,22 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
+@app.route("/drinks")
+def get_all_drinks():
+    try:
+        drinks_list = Drink.query.order_by(Drink.id).all()
+        drinks = []
+        
+        for drink in drinks_list:
+            drinks.append(drink.short())
+
+        return jsonify({
+            'success': True,
+            'drinks': drinks
+        })
+    except SystemError:
+        abort(404)
+
 
 '''
 @TODO implement endpoint
@@ -43,6 +59,17 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+@app.route("/drinks-detail")
+def retrieve_drinks_details():
+    try:
+        drinks_list = Drink.query.all()
+        drinks = []
+
+        for drink in drinks_list:
+            drinks.append(drink.long())
+        return jsonify({"success": True, "drinks": drinks})
+    except SystemError:
+        abort(404)
 
 
 '''
@@ -54,7 +81,27 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
+@app.route("/drinks", methods=["POST"])
+def post_drinks():
+    body = request.get_json()
+    title = body.get('title', None)
+    recipe = body.get('recipe', None)
 
+    if title is None or recipe is None:
+        abort(422)
+    else:
+        title = body['title']
+        recipe = json.dumps(body['recipe'])
+
+    try:
+        new_drink = Drink(title=title, recipe=recipe)
+        new_drink.insert()
+        return jsonify({
+            'success': True,
+            'drinks:': new_drink.long()
+        })
+    except SystemError:
+        abort(404)
 
 '''
 @TODO implement endpoint
