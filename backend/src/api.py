@@ -1,3 +1,4 @@
+from crypt import methods
 import os
 from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
@@ -114,6 +115,34 @@ def post_drinks():
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
+@app.route("/drinks/<int:id>", methods=["PATCH"])
+def edit_drink(id):
+    drink_to_update = Drink.query.get(id)
+    body = request.get_json
+    title = body.get('title', None)
+    recipe = body.get('recipe', None)
+
+
+    try:
+        if drink_to_update is None:
+            abort(404)
+        
+        if title:
+            drink_to_update.title = title
+
+        if recipe:
+            setattr(drink_to_update, 'recipe', json.dumps(body['recipe']))
+        
+        drink_to_update.update()
+        return jsonify({
+            'success': True,
+            'drinks': [drink_to_update.long()]
+        })
+        
+    except SystemError:
+        abort(404)
+    
+    
 
 
 '''
@@ -126,7 +155,23 @@ def post_drinks():
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+# @requires_auth('delete:drinks')
+def delete_drink(payload, drink_id):
+    try:
+        drink_to_delete = Drink.query.filter(Drink.id == drink_id).one_or_none()
 
+        if drink_to_delete is None:
+            abort(404)
+
+        drink_to_delete.delete()
+
+        return jsonify({
+            'success': True,
+            'delete': drink_to_delete.id
+        })
+    except SystemError:
+        abort(404)
 
 # Error Handling
 '''
@@ -164,3 +209,39 @@ def unprocessable(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+@app.errorhandler(404)
+def unprocessable(error):
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "not found"
+    }), 404
+
+@app.errorhandler(405)
+def unprocessable(error):
+    return jsonify({
+        "success": False,
+        "error": 405,
+        "message": "Method not allowed"
+    }), 405
+
+@app.errorhandler(500)
+def unprocessable(error):
+    return jsonify({
+        "success": False,
+        "error": 500,
+        "message": "internal server error"
+    }), 500
+
+
+'''
+@TODO implement error handler for AuthError
+    error handler should conform to general task above
+'''
+@app.errorhandler(AuthError)
+def handle_auth_error(auth_error):
+    return jsonify({
+        "success": False,
+        "error": auth_error.status_code,
+        "message": auth_error.error['description']
+    }), auth_error.status_code
