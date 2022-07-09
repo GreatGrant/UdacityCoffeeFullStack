@@ -5,7 +5,7 @@ from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'fscoffee.auth0.com'
+AUTH0_DOMAIN = 'fscoffee.us.auth0.com'
 ALGORITHMS = ['RS256']
 API_AUDIENCE = 'drink'
 
@@ -32,12 +32,17 @@ class AuthError(Exception):
 '''
 def get_token_auth_header():
     auth = request.headers.get('Authorization', None)
+    
+    #check that auth isn't null
     if not auth:
         raise AuthError({
             'code': 'authorization_header_missing',
             'description': 'Authorization header is expected'
         }, 401)
+
     bearer_part = auth.split()
+
+    #check bearer path
     if bearer_part[0].lower() != 'bearer':
         raise AuthError({
             'code': 'invalid_header',
