@@ -23,7 +23,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-db_drop_and_create_all()
+# db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -48,7 +48,8 @@ def get_all_drinks():
             'success': True,
             'drinks': drinks
         })
-    except SystemError:
+    except Exception as e:
+        print(e)
         abort(404)
 
 
@@ -60,8 +61,10 @@ def get_all_drinks():
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+
 @app.route("/drinks-detail")
-def retrieve_drinks_details():
+@requires_auth("get:drinks-detail")
+def retrieve_drinks_details(payload):
     try:
         drinks_list = Drink.query.all()
         drinks = []
@@ -69,7 +72,8 @@ def retrieve_drinks_details():
         for drink in drinks_list:
             drinks.append(drink.long())
         return jsonify({"success": True, "drinks": drinks})
-    except SystemError:
+    except Exception as e:
+        print(e)
         abort(404)
 
 
@@ -82,11 +86,13 @@ def retrieve_drinks_details():
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
+@requires_auth("post:drinks")
 @app.route("/drinks", methods=["POST"])
 def post_drinks():
     body = request.get_json()
-    title = body.get('title', None)
     recipe = body.get('recipe', None)
+    title = body.get('title', None)
+    
 
     if title is None or recipe is None:
         abort(422)
@@ -101,7 +107,8 @@ def post_drinks():
             'success': True,
             'drinks:': new_drink.long()
         })
-    except SystemError:
+    except Exception as e:
+        print(e)
         abort(404)
 
 '''
@@ -115,12 +122,14 @@ def post_drinks():
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
+@requires_auth("patch:drinks")
 @app.route("/drinks/<int:id>", methods=["PATCH"])
 def edit_drink(id):
     drink_to_update = Drink.query.get(id)
-    body = request.get_json
-    title = body.get('title', None)
+    body = request.get_json()
     recipe = body.get('recipe', None)
+    title = body.get('title', None)
+    
 
 
     try:
@@ -155,8 +164,8 @@ def edit_drink(id):
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+@requires_auth('delete:drinks')
 @app.route('/drinks/<int:drink_id>', methods=['DELETE'])
-# @requires_auth('delete:drinks')
 def delete_drink(payload, drink_id):
     try:
         drink_to_delete = Drink.query.filter(Drink.id == drink_id).one_or_none()
