@@ -31,16 +31,17 @@ CORS(app)
     GET /drinks
         it should be a public endpoint
         it should contain only the drink.short() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
+    returns status code 200 and json
+    {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+
 
 @app.route("/drinks")
 def get_all_drinks():
     try:
         drinks_list = Drink.query.order_by(Drink.id).all()
         drinks = []
-        
         for drink in drinks_list:
             drinks.append(drink.short())
 
@@ -58,9 +59,11 @@ def get_all_drinks():
     GET /drinks-detail
         it should require the 'get:drinks-detail' permission
         it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
+    returns status code 200 and json
+    {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+
 
 @app.route("/drinks-detail")
 @requires_auth("get:drinks-detail")
@@ -83,17 +86,19 @@ def retrieve_drinks_details(payload):
         it should create a new row in the drinks table
         it should require the 'post:drinks' permission
         it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
+    returns status code 200 and json
+    {"success": True, "drinks": drink}
+    where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
+
+
 @requires_auth("post:drinks")
 @app.route("/drinks", methods=["POST"])
 def post_drinks():
     body = request.get_json()
     recipe = body.get('recipe', None)
     title = body.get('title', None)
-    
-
     if title is None or recipe is None:
         abort(422)
     else:
@@ -119,9 +124,13 @@ def post_drinks():
         it should update the corresponding row for <id>
         it should require the 'patch:drinks' permission
         it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
+    returns status code 200 and json
+    {"success": True, "drinks": drink}
+    where drink an array containing only the updated drink
         or appropriate status code indicating reason for failure
 '''
+
+
 @requires_auth("patch:drinks")
 @app.route("/drinks/<int:id>", methods=["PATCH"])
 def edit_drink(id):
@@ -129,29 +138,24 @@ def edit_drink(id):
     body = request.get_json()
     recipe = body.get('recipe', None)
     title = body.get('title', None)
-    
-
 
     try:
         if drink_to_update is None:
             abort(404)
-        
         if title:
             drink_to_update.title = title
 
         if recipe:
             setattr(drink_to_update, 'recipe', json.dumps(body['recipe']))
-        
+
         drink_to_update.update()
         return jsonify({
             'success': True,
             'drinks': [drink_to_update.long()]
         })
-        
+
     except SystemError:
         abort(404)
-    
-    
 
 
 '''
@@ -161,14 +165,18 @@ def edit_drink(id):
         it should respond with a 404 error if <id> is not found
         it should delete the corresponding row for <id>
         it should require the 'delete:drinks' permission
-    returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
+    returns status code 200 and json
+    {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+
+
 @requires_auth('delete:drinks')
 @app.route('/drinks/<int:drink_id>', methods=['DELETE'])
 def delete_drink(payload, drink_id):
     try:
-        drink_to_delete = Drink.query.filter(Drink.id == drink_id).one_or_none()
+        drink_to_delete = Drink.query.filter(
+            Drink.id == drink_id).one_or_none()
 
         if drink_to_delete is None:
             abort(404)
@@ -218,6 +226,8 @@ def unprocessable(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+
+
 @app.errorhandler(404)
 def unprocessable(error):
     return jsonify({
@@ -226,6 +236,7 @@ def unprocessable(error):
         "message": "not found"
     }), 404
 
+
 @app.errorhandler(405)
 def unprocessable(error):
     return jsonify({
@@ -233,6 +244,7 @@ def unprocessable(error):
         "error": 405,
         "message": "Method not allowed"
     }), 405
+
 
 @app.errorhandler(500)
 def unprocessable(error):
@@ -247,6 +259,8 @@ def unprocessable(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+
+
 @app.errorhandler(AuthError)
 def handle_auth_error(auth_error):
     return jsonify({
