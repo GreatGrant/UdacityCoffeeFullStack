@@ -5,7 +5,7 @@ from sqlalchemy import exc
 import json
 from flask_cors import CORS
 
-from .database.models import db_drop_and_create_all, setup_db, Drink
+from .database.models import db_drop_and_create_all, setup_db, Drink, db
 from .auth.auth import AuthError, requires_auth
 
 app = Flask(__name__)
@@ -13,7 +13,7 @@ setup_db(app)
 CORS(app)
 
 
-# https://fscoffee.us.auth0.com/authorize?audience=drink&response_type=token&client_id=LoN4MSn2sRfciWJ1TdW9jAxaLF4gcwzq&redirect_uri=https://127.0.0.1:8080/login-result
+# https://fscoffee.us.auth0.com/authorize?audience=drink&response_type=token&client_id=LoN4MSn2sRfciWJ1TdW9jAxaLF4gcwzq&redirect_uri=http://localhost:8100
 
 # https://fscoffee.us.auth0.com/v2/logout?%20client_id=LoN4MSn2sRfciWJ1TdW9jAxaLF4gcwzq&%20returnTo=https://127.0.0.1:8080/logout
 
@@ -61,7 +61,6 @@ def get_all_drinks():
         it should contain the drink.long() data representation
     returns status code 200 and json
     {"success": True, "drinks": drinks} where drinks is the list of drinks
-        or appropriate status code indicating reason for failure
 '''
 
 
@@ -92,10 +91,9 @@ def retrieve_drinks_details(payload):
         or appropriate status code indicating reason for failure
 '''
 
-
-@requires_auth("post:drinks")
 @app.route("/drinks", methods=["POST"])
-def post_drinks():
+@requires_auth("post:drinks")
+def post_drinks(payload):
     body = request.get_json()
     recipe = body.get('recipe', None)
     title = body.get('title', None)
@@ -131,9 +129,9 @@ def post_drinks():
 '''
 
 
-@requires_auth("patch:drinks")
 @app.route("/drinks/<int:id>", methods=["PATCH"])
-def edit_drink(id):
+@requires_auth("patch:drinks")
+def edit_drink(payload, id):
     drink_to_update = Drink.query.get(id)
     body = request.get_json()
     recipe = body.get('recipe', None)
@@ -171,8 +169,8 @@ def edit_drink(id):
 '''
 
 
-@requires_auth('delete:drinks')
 @app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
 def delete_drink(payload, drink_id):
     try:
         drink_to_delete = Drink.query.filter(
