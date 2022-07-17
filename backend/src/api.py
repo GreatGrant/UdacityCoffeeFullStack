@@ -108,7 +108,7 @@ def post_drinks(payload):
         new_drink.insert()
         return jsonify({
             'success': True,
-            'drinks:': new_drink.long()
+            'drinks:': [new_drink.long()]
         })
     except Exception as e:
         print(e)
